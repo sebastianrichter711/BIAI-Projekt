@@ -66,9 +66,6 @@ class Ui_MainWindow(QtWidgets.QWidget):
 
         self.chartWidget.setChart(chart)
         
-
-
-
     def handleInput(self):
         file_path = QtWidgets.QFileDialog.getOpenFileName(self, "Wybierz dane", os.getcwd(), "*.txt")
         with open(file_path[0]) as file:
@@ -79,8 +76,6 @@ class Ui_MainWindow(QtWidgets.QWidget):
                 self.data.append(point)
         self.updatePointList()
         self.updateGraph()
-
-
 
 
 if __name__ == "__main__":
