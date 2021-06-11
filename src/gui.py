@@ -9,6 +9,8 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtChart
 import os
+import re
+    
 
 class Ui_MainWindow(QtWidgets.QWidget):
     def setupUi(self, MainWindow):
@@ -61,6 +63,7 @@ class Ui_MainWindow(QtWidgets.QWidget):
             series.append(point[0], point[1])
         chart = QtChart.QChart()
         chart.addSeries(series)
+        chart.createDefaultAxes()
         chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
         chart.setTheme(QtChart.QChart.ChartThemeBlueCerulean)
 
@@ -74,11 +77,29 @@ class Ui_MainWindow(QtWidgets.QWidget):
         with open(file_path[0]) as file:
             self.data = []
             for line in file.readlines():
-                b = line.strip().split('\t')
-                point = (float(b[0]), float(b[1]))
+                line = line.strip()
+                if re.match(r"-?[0-9]+.[0-9]+\t-?[0-9]+.[0-9]+", line) == None:
+                    message_box = QtWidgets.QMessageBox(self)
+                    message_box.setText(u"Błędne dane wejściowe")
+                    message_box.setWindowTitle(u"Błąd")
+                    message_box.show()
+                    return
+                vec = line.split('\t')
+                point = (float(vec[0]), float(vec[1]))
                 self.data.append(point)
         self.updatePointList()
+        self.normalizeInput()
         self.updateGraph()
+
+    def normalizeInput(self):
+        min_x = min(self.data, key= lambda p: p[0])[0]
+        min_y = min(self.data, key= lambda p: p[1])[1]
+        max_x = max(self.data, key= lambda p: p[0])[0]
+        max_y = max(self.data, key= lambda p: p[1])[1]
+        result = map(lambda p: (-1.0 + (p[0] - min_x) * 2.0 / (max_x - min_x), 
+        -1.0 + (p[1] - min_y) * 2.0 / (max_y - min_y)), self.data)
+        self.data = list(result)
+        
 
 
 
