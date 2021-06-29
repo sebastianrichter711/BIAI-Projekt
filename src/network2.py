@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import MinMaxScaler
 
-file_path = 'C:\BIAI-Projekt\src\data\prosta_12.txt'
+file_path = f'{os.getcwd()}\data\punkty.txt'
 with open(file_path) as file:
     data = []
     for line in file.readlines():
