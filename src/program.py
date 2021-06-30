@@ -3,16 +3,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
-#import seaborn as sns
 import numpy as np
-#import pandas as pd
 import matplotlib.pyplot as plt
 #%matplotlib inline
 
 from sklearn.preprocessing import MinMaxScaler
 
-file_path = f'{os.getcwd()}\data\punkty.txt'
+filename = input("Write a name of file to analyze: ")
+
+file_path = f'{os.getcwd()}\data\{filename}'
 with open(file_path) as file:
     data = []
     for line in file.readlines():
