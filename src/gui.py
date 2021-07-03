@@ -9,10 +9,10 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtChart
 import os
-import re
-    
+import model
 
 class Ui_MainWindow(QtWidgets.QWidget):
+    #setup window (generated based on QtDesigner file)
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(950, 614)
@@ -31,7 +31,10 @@ class Ui_MainWindow(QtWidgets.QWidget):
         self.verticalLayout.addWidget(self.pointList)
         self.loadBtn = QtWidgets.QPushButton(self.centralwidget)
         self.loadBtn.setObjectName("loadBtn")
-        self.verticalLayout.addWidget(self.loadBtn)
+        self.verticalLayout.addWidget(self.loadBtn)        
+        self.simulateBtn = QtWidgets.QPushButton(self.centralwidget)
+        self.simulateBtn.setObjectName("simulateBtn")
+        self.verticalLayout.addWidget(self.simulateBtn)
         self.gridLayout.addLayout(self.verticalLayout, 0, 1, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -42,27 +45,52 @@ class Ui_MainWindow(QtWidgets.QWidget):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        #create signal for button click
         self.loadBtn.clicked.connect(self.handleInput)
-        self.data = []
+        self.simulateBtn.clicked.connect(self.handlePredict)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.model = model.Simulation_model()
+    
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "PointPrediction"))
-        self.loadBtn.setText(_translate("MainWindow", "Załaduj dane"))
+        self.loadBtn.setText(_translate("MainWindow", "Load data"))
+        self.simulateBtn.setText(_translate("MainWindow", "Predict"))
 
+    #update list of parsed data in the gui
     def updatePointList(self):
         self.pointList.clear()
-        for point in self.data:
-            self.pointList.addItem(f"X: {point[0]}; Y: {point[1]}")
+        x_pts = self.model.input_x_values
+        y_pts = self.model.all_data
+        for x, y in zip(x_pts, y_pts):
+            self.pointList.addItem(f"X: {x}; Y: {y}")
 
+    #create line chart of simulation
     def updateGraph(self):
-        series = QtChart.QLineSeries()
-        for point in self.data:
-            series.append(point[0], point[1])
+        #create line series objects
+        input_series = QtChart.QLineSeries()
+        output_series = QtChart.QLineSeries()
+        input_series.setName("Input position")
+        output_series.setName("Predicted position")
+
+        #get data from the model class and parse them into both series
+        x_input_pts = self.model.input_x_values
+        y_input_pts = self.model.all_data        
+        x_output_pts = self.model.output_x_values
+        y_output_pts = self.model.predicted_points
+
+        for x, y in zip (x_input_pts, y_input_pts):
+            input_series.append(x, y)
+        for x, y in zip (x_output_pts, y_output_pts):
+            output_series.append(x, y)
+        
+        #create chart widget and hook it up to gui
         chart = QtChart.QChart()
-        chart.addSeries(series)
+        chart.setTitle("Point movement prediction")
+        chart.addSeries(input_series)
+        chart.addSeries(output_series)
         chart.createDefaultAxes()
         chart.setAnimationOptions(QtChart.QChart.SeriesAnimations)
         chart.setTheme(QtChart.QChart.ChartThemeBlueCerulean)
@@ -71,39 +99,29 @@ class Ui_MainWindow(QtWidgets.QWidget):
         
 
 
-
+    #displays file explorer window, reads selected data and starts simulation
     def handleInput(self):
-        file_path = QtWidgets.QFileDialog.getOpenFileName(self, "Wybierz dane", os.getcwd(), "*.txt")
-        with open(file_path[0]) as file:
-            self.data = []
-            for line in file.readlines():
-                line = line.strip()
-                if re.match(r"-?[0-9]+.[0-9]+\t-?[0-9]+.[0-9]+", line) == None:
-                    message_box = QtWidgets.QMessageBox(self)
-                    message_box.setText(u"Błędne dane wejściowe")
-                    message_box.setWindowTitle(u"Błąd")
-                    message_box.show()
-                    return
-                vec = line.split('\t')
-                point = (float(vec[0]), float(vec[1]))
-                self.data.append(point)
-        self.updatePointList()
-        self.normalizeInput()
-        self.updateGraph()
-
-    def normalizeInput(self):
-        min_x = min(self.data, key= lambda p: p[0])[0]
-        min_y = min(self.data, key= lambda p: p[1])[1]
-        max_x = max(self.data, key= lambda p: p[0])[0]
-        max_y = max(self.data, key= lambda p: p[1])[1]
-        result = map(lambda p: (-1.0 + (p[0] - min_x) * 2.0 / (max_x - min_x), 
-        -1.0 + (p[1] - min_y) * 2.0 / (max_y - min_y)), self.data)
-        self.data = list(result)
-        
+        file_path = QtWidgets.QFileDialog.getOpenFileName(self, "Select data", os.getcwd(), "*.txt")
+        if file_path[0] != '' and self.model.read_data(file_path[0]):
+            self.updatePointList()
+        else:
+            message_box = QtWidgets.QMessageBox(self)
+            message_box.setText(u"Invalid input data")
+            message_box.setWindowTitle(u"Error")
+            message_box.show()
+    def handlePredict(self):
+        if self.model.is_data_loaded():
+            self.model.simulate()
+            self.updateGraph()
+        else:
+            message_box = QtWidgets.QMessageBox(self)
+            message_box.setText(u"Please load some data...")
+            message_box.setWindowTitle(u"Error")
+            message_box.show()
 
 
 
-
+#main function
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)

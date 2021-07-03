@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 pyqt5 = "*"
 pyqtchart = "*"
+matplotlib = "*"
+sklearn = "*"
 
 [dev-packages]
 
