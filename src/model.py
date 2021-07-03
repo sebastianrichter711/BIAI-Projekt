@@ -6,7 +6,7 @@ import numpy as np
 import re
 from sklearn.preprocessing import MinMaxScaler
 
-TEST_DATA_SIZE = 10 # declare how many points we're going to predict
+TEST_DATA_SIZE = 1 # declare how many points we're going to predict
 scaler = MinMaxScaler(feature_range=(-1, 1))
 
 #create a class representing neural network
